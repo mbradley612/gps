@@ -16,6 +16,29 @@ static int gps_uart_no = 0;
 static size_t gpsDataAvailable = 0;
 static struct minmea_sentence_rmc lastFrame;
 
+/*
+
+In it's current form, this library only provides an API for longitude and
+latitude and speed readings from the RMC sentence.
+
+The library parses RMC, GGA and GSV sentences.
+
+The adafruit GPS library for Arduino has the following recommendation:
+
+"We suggest keeping the update rate at 1Hz and request that the GPS only
+output RMC and GGA as the parser does not keep track of other data anyways."
+
+The underlying source library is https://github.com/kosma/minmea. From the
+example on the readme.MD, looks like we need a more sophisticated implementation
+to capture all of the information we are interested, e.g. with a single
+C struct that we can read an write from with long, lat, speed, number satellites
+etc.
+
+For now just adding speed and direction.
+
+*/
+
+
 char *mgos_get_location()
 {
 
@@ -28,7 +51,7 @@ char *mgos_get_location()
 
     float lat = minmea_tocoord(&lastFrame.latitude);
     float lon = minmea_tocoord(&lastFrame.longitude);
-    float speed = minmea_tocoord(&lastFrame.speed);
+    float speed = minmea_tofloat(&lastFrame.speed);
 
     if (lat == NAN)
     {
@@ -51,6 +74,7 @@ char *mgos_get_location()
 
     return fb.buf;
 }
+
 
 static void parseGpsData(char *line)
 {
